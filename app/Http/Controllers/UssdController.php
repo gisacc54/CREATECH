@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helper\Data;
 use App\Models\Point;
 use App\Models\Transaction;
 use App\Models\UssdPin;
@@ -77,8 +78,35 @@ class UssdController extends Controller
                 $request['pin'] = $ussd_string_exploded[4];
                 $request['phone_number'] = str_replace('+','',$phoneNumber);
 
-                $response = "CON $request->amount";
+                $resp = $this->deductAmountFromWallet($request);
+                if (!$resp->status){
+                    $response = "CON $resp->message";
+                }
 
+                $questions = $resp->data;
+                $questionData = $questions[0];
+                $response = "CON $questionData->question\n";
+                $i = 1;
+                foreach ($questionData->answer as $answer){
+                    $response .="$i. $answer->value\n";
+                    $i++;
+                }
+
+
+            }
+        }
+
+        if ($level == 5 ){
+            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
+
+                $questions = Data::$data;
+                $questionData = $questions[1];
+                $response = "CON $questionData->question\n";
+                $i = 1;
+                foreach ($questionData->answer as $answer){
+                    $response .="$i. $answer->value\n";
+                    $i++;
+                }
             }
         }
 
@@ -87,6 +115,7 @@ class UssdController extends Controller
 
     public function deductAmountFromWallet($request)
     {
+
         $pin = UssdPin::where('phone_number',$request->phone_number);
 
         if ($pin->pin != $request->pin){
@@ -97,6 +126,30 @@ class UssdController extends Controller
         }
 
         $request['description'] = "You have buy a Game Chance at Gemika TZS $request->amount";
+        $request['user_id'] = $pin->user_id;
+        $request['transaction_type'] = 'Withdraw';
+        $request['from'] = 'Wallet';
+
+        Transaction::create($request);
+
+        $wallet = Wallet::where('user_id',$request->user_id);
+
+        if ($wallet->amount < $request->amount){
+            return (object)[
+                'status'=>false,
+                'message' => "Insufficient balance"
+            ];
+        }
+        //TODO: deduct balance
+        $wallet->amount -= $request->amount;
+        $wallet->save();
+
+        $questions = Data::$data;
+
+        return (object)[
+          'status'=>true,
+          'data'=>$questions
+        ];
 
     }
 
