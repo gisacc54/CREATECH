@@ -28,13 +28,13 @@ class UssdController extends Controller
 
         if ($text == "") {
             // This is the first request. Note how we start the response with CON
-            $response = "CON Welcome to Gamika $phoneNumber\n";
+            $response = "CON Welcome to Gamika\n $level";
             $response .= "1. Play Game \n";
             $response .= "2. My Account \n";
 
         } else if ($text == "1") {
             // Business logic for first level response
-            $response = "CON Select Category \n";
+            $response = "CON Select Category \n $level";
             $response .= "1. General \n";
             $response .= "2. Sports \n";
             $response .= "3. Health \n";
