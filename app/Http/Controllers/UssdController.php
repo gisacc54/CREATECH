@@ -132,7 +132,10 @@ class UssdController extends Controller
 
 
         } else if ($text == "2") {
-            $response = "END Your phone number is ".$phoneNumber;
+            // Business logic for first level response
+            $response = "CON Choose account information you want to view \n";
+            $response .= "1. My Number \n";
+            $response .= "2. For a Friend \n";
 
         } else if($text == "1*1") {
             // This is a second level response where the user selected 1 in the first instance
@@ -140,6 +143,12 @@ class UssdController extends Controller
             $response .= "1. Easy\n";
             $response .= "2. Hard\n";
             // This is a terminal request. Note how we start the response with END
+
+        }else if($text == "2*1") {
+            // This is a second level response where the user selected 1 in the first instance
+
+            // This is a terminal request. Note how we start the response with END
+            $response = "CON Enter amount";
 
         }
 
@@ -150,12 +159,19 @@ class UssdController extends Controller
                 $response = "CON Enter Amount";
 
             }
+            if ($ussd_string_exploded[0] ==2 && $ussd_string_exploded[1] == 1){
+                $response = "CON Enter your account pin";
+            }
         }
 
         if ($level == 4 ){
             if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
                 //TODO: take amount and deduct from wallet
                 $response = "CON Enter PIN";
+            }
+            if ($ussd_string_exploded[0] ==2 && $ussd_string_exploded[1] == 1){
+                $response = "CON you have recharged My Account amount $ussd_string_exploded[2] Select \n1. Via Wallet or \n2. Via Credit Card";
+
             }
         }
         if ($level == 5 ){
@@ -184,6 +200,31 @@ class UssdController extends Controller
                 }
 
 
+            }
+            if ($ussd_string_exploded[0] == 2 && $ussd_string_exploded[1] == 1){
+
+                $pin = $ussd_string_exploded[3];
+                $amount = $ussd_string_exploded[2];
+                $phoneNum = str_replace('+',"",$phoneNumber);
+                $user = UssdPin::where('phone_number',$phoneNum)->first();
+
+                if ($user->pin != $pin){
+                    $response = "END Invalid Pin";
+                } else{
+                    $request['amount'] = $amount;
+                    $request['phone_number'] = $phoneNumber;
+                    $request["user_id"] = $user->user_id;
+
+                    if($ussd_string_exploded[4] == 2){
+                        $request['credit_card'] = true;
+                    }else{
+                        $request['credit_card'] = false;
+                    }
+
+                    $resp = $this->buyAirtime($request);
+
+                    $response = "END $resp->message";
+                }
             }
         }
 
@@ -327,7 +368,7 @@ class UssdController extends Controller
         $point->save();
         //TODO: buy airtime
 
-        MainService::SendAirTime($request);
+//        MainService::SendAirTime($request);
 
         return (object)[
             'status'=>true,
