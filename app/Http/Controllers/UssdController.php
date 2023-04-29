@@ -110,6 +110,20 @@ class UssdController extends Controller
             }
         }
 
+//        if ($level == 6 ){
+//            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
+//
+//                $questions = Data::$data;
+//                $questionData = $questions[1];
+//                $response = "CON $questionData->question\n";
+//                $i = 1;
+//                foreach ($questionData->answer as $answer){
+//                    $response .="$i. $answer->value\n";
+//                    $i++;
+//                }
+//            }
+//        }
+
         echo $response;
     }
 
