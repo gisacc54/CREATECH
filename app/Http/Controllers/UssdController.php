@@ -78,19 +78,20 @@ class UssdController extends Controller
                 $request['pin'] = $ussd_string_exploded[4];
                 $request['phone_number'] = str_replace('+','',$phoneNumber);
 
+                $response = "CON tet";
                 $resp = $this->deductAmountFromWallet($request);
-                if (!$resp->status){
-                    $response = "CON $resp->message";
-                }else{
-                    $questions = $resp->data;
-                    $questionData = $questions[0];
-                    $response = "CON $questionData->question\n";
-                    $i = 1;
-                    foreach ($questionData->answer as $answer){
-                        $response .="$i. $answer->value\n";
-                        $i++;
-                    }
-                }
+//                if (!$resp->status){
+//                    $response = "CON $resp->message";
+//                }else{
+//                    $questions = $resp->data;
+//                    $questionData = $questions[0];
+//                    $response = "CON $questionData->question\n";
+//                    $i = 1;
+//                    foreach ($questionData->answer as $answer){
+//                        $response .="$i. $answer->value\n";
+//                        $i++;
+//                    }
+//                }
 
 
             }
