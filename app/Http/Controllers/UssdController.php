@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helper\Data;
 use App\Models\Point;
 use App\Models\Transaction;
 use App\Models\UssdPin;
@@ -12,6 +11,97 @@ use Illuminate\Http\Request;
 
 class UssdController extends Controller
 {
+    public $data = [
+        //question start
+        [
+            'question'=>'What is the largest organ in the human body',
+            'answer'=>[
+                [
+                    'value'=>'skin',
+                    'is_correct'=>true
+                ],
+                [
+                    'value'=>'Heart',
+                    'is_correct'=>false
+                ]
+
+            ]
+        ],
+        [
+            'question'=>'Which planet in our solar system is known for its rings',
+            'answer'=>[
+                [
+                    'value'=>'Saturn',
+                    'is_correct'=>true
+                ],
+                [
+                    'value'=>'Mars',
+                    'is_correct'=>false
+                ]
+
+            ]
+        ],
+//        [
+//            'question'=>'What is the process by which plants convert sunlight into energy called?',
+//            'answer'=>[
+//                [
+//                    'value'=>'Photosynthesis',
+//                    'is_correct'=>true
+//                ],
+//                [
+//                    'value'=>'Respiration',
+//                    'is_correct'=>false
+//                ]
+//
+//            ]
+//        ],
+//        [
+//            'question'=>'What is the name of the smallest bone in the human body?',
+//            'answer'=>[
+//                [
+//                    'value'=>'Stapes',
+//                    'is_correct'=>true
+//                ],
+//                [
+//                    'value'=>'Humerus',
+//                    'is_correct'=>false
+//                ]
+//
+//            ]
+//        ],
+//        [
+//            'question'=>'Which war was fought between the United States and Spain in 1898?',
+//            'answer'=>[
+//                [
+//                    'value'=>'Spanish-American War',
+//                    'is_correct'=>true
+//                ],
+//                [
+//                    'value'=>'World War I',
+//                    'is_correct'=>false
+//                ]
+//
+//            ]
+//        ],
+//        [
+//            'question'=>'Who is the riches man in the world',
+//            'answer'=>[
+//                [
+//                    'value'=>'Elon Musk',
+//                    'is_correct'=>true
+//                ],
+//                [
+//                    'value'=>'George Bush',
+//                    'is_correct'=>false
+//                ]
+//
+//            ]
+//        ],
+
+
+
+        //question end
+    ];
     public function ussd(Request $request)
     {
         $sessionId      = $request->get('sessionId');
@@ -78,29 +168,29 @@ class UssdController extends Controller
                 $request['pin'] = $ussd_string_exploded[4];
                 $request['phone_number'] = str_replace('+','',$phoneNumber);
 
-                $response = "CON tet";
+//                $response = "CON $request->pin";
                 $resp = $this->deductAmountFromWallet($request);
-//                if (!$resp->status){
-//                    $response = "CON $resp->message";
-//                }else{
-//                    $questions = $resp->data;
-//                    $questionData = $questions[0];
-//                    $response = "CON $questionData->question\n";
-//                    $i = 1;
-//                    foreach ($questionData->answer as $answer){
-//                        $response .="$i. $answer->value\n";
-//                        $i++;
-//                    }
-//                }
+                if (!$resp->status){
+                    $response = "CON $resp->message";
+                }else{
+                    $questions = $resp->data;
+                    $questionData = $questions[0];
+                    $response = "CON $questionData->question\n";
+                    $i = 1;
+                    foreach ($questionData->answer as $answer){
+                        $response .="$i. $answer->value\n";
+                        $i++;
+                    }
+                }
 
 
             }
         }
 
-        if ($level == 5 ){
+        if ($level == 6 ){
             if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
 
-                $questions = Data::$data;
+                $questions = $this->data;
                 $questionData = $questions[1];
                 $response = "CON $questionData->question\n";
                 $i = 1;
@@ -133,38 +223,38 @@ class UssdController extends Controller
 
         $pin = UssdPin::where('phone_number',$request->phone_number)->get();
 
-//        if ($pin->pin != $request->pin){
-//            return (object)[
-//                'status'=>false,
-//                'message'=>"END invalid pin"
-//            ];
-//        }
+        if ($pin->pin != $request->pin){
+            return (object)[
+                'status'=>false,
+                'message'=>"END invalid pin"
+            ];
+        }
 //
-//        $request['description'] = "You have buy a Game Chance at Gemika TZS $request->amount";
-//        $request['user_id'] = $pin->user_id;
-//        $request['transaction_type'] = 'Withdraw';
-//        $request['from'] = 'Wallet';
-//
-//        Transaction::create($request);
-//
-//        $wallet = Wallet::where('user_id',$request->user_id);
-//
-//        if ($wallet->amount < $request->amount){
-//            return (object)[
-//                'status'=>false,
-//                'message' => "Insufficient balance"
-//            ];
-//        }
-//        //TODO: deduct balance
-//        $wallet->amount -= $request->amount;
-//        $wallet->save();
-//
-//        $questions = Data::$data;
-//
-//        return (object)[
-//          'status'=>true,
-//          'data'=>$questions
-//        ];
+        $request['description'] = "You have buy a Game Chance at Gemika TZS $request->amount";
+        $request['user_id'] = $pin->user_id;
+        $request['transaction_type'] = 'Withdraw';
+        $request['from'] = 'Wallet';
+
+        Transaction::create($request);
+
+        $wallet = Wallet::where('user_id',$request->user_id);
+
+        if ($wallet->amount < $request->amount){
+            return (object)[
+                'status'=>false,
+                'message' => "Insufficient balance"
+            ];
+        }
+        //TODO: deduct balance
+        $wallet->amount -= $request->amount;
+        $wallet->save();
+
+        $questions = $this->data;
+
+        return (object)[
+          'status'=>true,
+          'data'=>$questions
+        ];
 
     }
 
