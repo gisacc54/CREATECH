@@ -49,7 +49,7 @@ class UssdController extends Controller
             // This is a second level response where the user selected 1 in the first instance
 
             // This is a terminal request. Note how we start the response with END
-            $response = "CON Enter amount";
+            $response = "CON Enter amount $level";
 
         }
         echo $response;
