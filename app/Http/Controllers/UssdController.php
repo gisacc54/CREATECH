@@ -131,7 +131,7 @@ class UssdController extends Controller
     public function deductAmountFromWallet($request)
     {
 
-        $pin = UssdPin::where('phone_number',$request->phone_number);
+        $pin = UssdPin::where('phone_number',$request->phone_number)->get();
 
 //        if ($pin->pin != $request->pin){
 //            return (object)[
