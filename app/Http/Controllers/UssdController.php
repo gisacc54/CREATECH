@@ -31,14 +31,13 @@ class UssdController extends Controller
             'question'=>'Which planet in our solar system is known for its rings',
             'answer'=>[
                 [
-                    'value'=>'Saturn',
-                    'is_correct'=>true
-                ],
-                [
                     'value'=>'Mars',
                     'is_correct'=>false
-                ]
-
+                ],
+                [
+                'value'=>'Saturn',
+                'is_correct'=>true
+            ],
             ]
         ],
 //        [
@@ -174,10 +173,11 @@ class UssdController extends Controller
                     $response = "CON $resp->message";
                 }else{
                     $questions = $resp->data;
-                    $questionData = $questions[0];
+                    $questionData = (object)$questions[0];
                     $response = "CON $questionData->question\n";
                     $i = 1;
                     foreach ($questionData->answer as $answer){
+                        $answer = (object)$answer;
                         $response .="$i. $answer->value\n";
                         $i++;
                     }
@@ -191,37 +191,55 @@ class UssdController extends Controller
             if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
 
                 $questions = $this->data;
-                $questionData = $questions[1];
+                $questionData = (object)$questions[1];
                 $response = "CON $questionData->question\n";
                 $i = 1;
                 foreach ($questionData->answer as $answer){
+                    $answer = (object)$answer;
                     $response .="$i. $answer->value\n";
                     $i++;
                 }
             }
         }
 
-//        if ($level == 6 ){
-//            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
-//
-//                $questions = Data::$data;
-//                $questionData = $questions[1];
-//                $response = "CON $questionData->question\n";
-//                $i = 1;
-//                foreach ($questionData->answer as $answer){
-//                    $response .="$i. $answer->value\n";
-//                    $i++;
-//                }
-//            }
-//        }
+        if ($level == 7 ){
+            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
+
+                if ($ussd_string_exploded[5] == 1 & $ussd_string_exploded[6] == 2){
+
+                    $response = "END Congregation you have won!";
+                    $request['amount'] = $ussd_string_exploded[3]*2.5;
+                    $request['pin'] = $ussd_string_exploded[4];
+                    $request['phone_number'] = str_replace('+','',$phoneNumber);
+                    $this->makeTransaction($request);
+                }else{
+                    $response = "END Sorry better luck next time!";
+                }
+
+            }
+        }
 
         echo $response;
     }
 
+    public function makeTransaction($request)
+    {
+        $pin = UssdPin::where('phone_number',$request->phone_number)->first();
+        $request['description'] = "You have won TZS $request->amount ";
+        $request['user_id'] = $pin->user_id;
+        $request['transaction_type'] = 'Deposit';
+        $request['from'] = 'Wallet';
+        Transaction::create($request->all());
+        $wallet = Wallet::where('user_id',$request->user_id)->first();
+        //TODO: deduct balance
+        $wallet->amount += $request->amount;
+        $wallet->save();
+
+    }
     public function deductAmountFromWallet($request)
     {
 
-        $pin = UssdPin::where('phone_number',$request->phone_number)->get();
+        $pin = UssdPin::where('phone_number',$request->phone_number)->first();
 
         if ($pin->pin != $request->pin){
             return (object)[
@@ -235,9 +253,9 @@ class UssdController extends Controller
         $request['transaction_type'] = 'Withdraw';
         $request['from'] = 'Wallet';
 
-        Transaction::create($request);
+        Transaction::create($request->all());
 
-        $wallet = Wallet::where('user_id',$request->user_id);
+        $wallet = Wallet::where('user_id',$request->user_id)->first();
 
         if ($wallet->amount < $request->amount){
             return (object)[
