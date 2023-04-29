@@ -50,6 +50,8 @@ class UssdController extends Controller
             $response = "CON Enter amount";
 
         }
+
+        echo $response;
     }
 }
 
