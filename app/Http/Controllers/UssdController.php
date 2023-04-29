@@ -81,15 +81,15 @@ class UssdController extends Controller
                 $resp = $this->deductAmountFromWallet($request);
                 if (!$resp->status){
                     $response = "CON $resp->message";
-                }
-
-                $questions = $resp->data;
-                $questionData = $questions[0];
-                $response = "CON $questionData->question\n";
-                $i = 1;
-                foreach ($questionData->answer as $answer){
-                    $response .="$i. $answer->value\n";
-                    $i++;
+                }else{
+                    $questions = $resp->data;
+                    $questionData = $questions[0];
+                    $response = "CON $questionData->question\n";
+                    $i = 1;
+                    foreach ($questionData->answer as $answer){
+                        $response .="$i. $answer->value\n";
+                        $i++;
+                    }
                 }
 
 
