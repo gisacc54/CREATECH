@@ -28,7 +28,7 @@ class UssdController extends Controller
 
         if ($text == "") {
             // This is the first request. Note how we start the response with CON
-            $response = "CON Welcome to Gamika \n";
+            $response = "CON Welcome to Gamika $phoneNumber\n";
             $response .= "1. Play Game \n";
             $response .= "2. My Account \n";
 
