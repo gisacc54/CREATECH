@@ -133,38 +133,38 @@ class UssdController extends Controller
 
         $pin = UssdPin::where('phone_number',$request->phone_number);
 
-        if ($pin->pin != $request->pin){
-            return (object)[
-                'status'=>false,
-                'message'=>"END invalid pin"
-            ];
-        }
-
-        $request['description'] = "You have buy a Game Chance at Gemika TZS $request->amount";
-        $request['user_id'] = $pin->user_id;
-        $request['transaction_type'] = 'Withdraw';
-        $request['from'] = 'Wallet';
-
-        Transaction::create($request);
-
-        $wallet = Wallet::where('user_id',$request->user_id);
-
-        if ($wallet->amount < $request->amount){
-            return (object)[
-                'status'=>false,
-                'message' => "Insufficient balance"
-            ];
-        }
-        //TODO: deduct balance
-        $wallet->amount -= $request->amount;
-        $wallet->save();
-
-        $questions = Data::$data;
-
-        return (object)[
-          'status'=>true,
-          'data'=>$questions
-        ];
+//        if ($pin->pin != $request->pin){
+//            return (object)[
+//                'status'=>false,
+//                'message'=>"END invalid pin"
+//            ];
+//        }
+//
+//        $request['description'] = "You have buy a Game Chance at Gemika TZS $request->amount";
+//        $request['user_id'] = $pin->user_id;
+//        $request['transaction_type'] = 'Withdraw';
+//        $request['from'] = 'Wallet';
+//
+//        Transaction::create($request);
+//
+//        $wallet = Wallet::where('user_id',$request->user_id);
+//
+//        if ($wallet->amount < $request->amount){
+//            return (object)[
+//                'status'=>false,
+//                'message' => "Insufficient balance"
+//            ];
+//        }
+//        //TODO: deduct balance
+//        $wallet->amount -= $request->amount;
+//        $wallet->save();
+//
+//        $questions = Data::$data;
+//
+//        return (object)[
+//          'status'=>true,
+//          'data'=>$questions
+//        ];
 
     }
 
