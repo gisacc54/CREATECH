@@ -48,7 +48,7 @@ class UssdController extends Controller
             // This is a second level response where the user selected 1 in the first instance
             $response = "CON select level\n";
             $response .= "1. Easy\n";
-            $response .= "1. Hard\n";
+            $response .= "2. Hard\n";
             // This is a terminal request. Note how we start the response with END
 
         }
@@ -75,6 +75,8 @@ class UssdController extends Controller
 
                 $request['amount'] = $ussd_string_exploded[3];
                 $request['pin'] = $ussd_string_exploded[4];
+                $request['phone_number'] = str_replace('+','',$phoneNumber);
+
                 $response = "CON $request->amount";
 
             }
@@ -83,8 +85,18 @@ class UssdController extends Controller
         echo $response;
     }
 
-    public function deductAmountFromWallet()
+    public function deductAmountFromWallet($request)
     {
+        $pin = UssdPin::where('phone_number',$request->phone_number);
+
+        if ($pin->pin != $request->pin){
+            return (object)[
+                'status'=>false,
+                'message'=>"END invalid pin"
+            ];
+        }
+
+        $request['description'] = "You have buy a Game Chance at Gemika TZS $request->amount";
 
     }
 
