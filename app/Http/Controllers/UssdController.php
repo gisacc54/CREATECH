@@ -30,7 +30,8 @@ class UssdController extends Controller
             // This is the first request. Note how we start the response with CON
             $response = "CON Welcome to Gamika\n $level";
             $response .= "1. Play Game \n";
-            $response .= "2. My Account \n";
+            $response .= "2. Buy Airtime \n";
+            $response .= "3. My Account \n";
 
         } else if ($text == "1") {
             // Business logic for first level response
@@ -53,8 +54,98 @@ class UssdController extends Controller
         }
 
 
-        if ($level )
+
+        if ($level == 3){
+            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
+                $response = "CON Enter Amount";
+
+            }
+        }
+
+        if ($level == 4 ){
+            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
+                //TODO: take amount and deduct from wallet
+                $response = "CON Enter PIN";
+            }
+        }
+        if ($level == 5 ){
+            if ($ussd_string_exploded[0]== 1 && $ussd_string_exploded[1] == 1 && $ussd_string_exploded[2] == 1 ){
+                //TODO: take amount and deduct from wallet
+                $request = new Request();
+
+                $request['amount'] = $ussd_string_exploded[3];
+                $request['pin'] = $ussd_string_exploded[4];
+                $response = "CON $request->amount";
+
+            }
+        }
+
         echo $response;
     }
+
+    public function deductAmountFromWallet()
+    {
+
+    }
+
+    public function buyAirtime($request,$isMe = true)
+    {
+        if ($isMe){
+            $request['description'] = "You have buy TZS $request->amount airtime for your phone number $request->phone_number";
+        }
+        else{
+            $request['description'] = "You have buy TZS $request->amount airtime for your friend phone number $request->phone_number";
+        }
+
+        $request["transaction_type"] = "Withdraw";
+
+
+        if ($request->credit_card){
+            $request['from'] = "Credit-Card";
+            //TODO: deduct amount from your credit card
+
+            Transaction::create($request->all());
+
+            //TODO: add points
+            $point = Point::where('user_id',$request->user_id)->first();
+            $point->point += ($request->amount/100);
+            $point->save();
+
+            MainService::SendAirTime($request);
+            return (object)[
+                'status'=>true,
+                'message' => " Credited successful"
+            ];
+        }
+        $wallet = Wallet::where('user_id',$request->user_id)->first();
+        if ( $wallet->amount < $request->amount){
+            return (object)[
+                'status'=>false,
+                'message' => "Insufficient balance"
+            ];
+        }
+
+
+        //TODO: record transaction
+        $request['from'] = "Wallet";
+        Transaction::create($request->all());
+        //TODO: deduct balance
+        $wallet->amount -= $request->amount;
+        $wallet->save();
+
+        //TODO: add points
+        $point = Point::where('user_id',$request->user_id)->first();
+        $point->point += ($request->amount/100);
+        $point->save();
+        //TODO: buy airtime
+
+        MainService::SendAirTime($request);
+
+        return (object)[
+            'status'=>true,
+            'message' => "Credited successful"
+        ];
+    }
 }
+
 
